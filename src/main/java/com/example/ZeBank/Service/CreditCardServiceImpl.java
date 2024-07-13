@@ -164,13 +164,9 @@ public class CreditCardServiceImpl extends GenericServiceImpl<CreditCard, Credit
             logger.info("No late payment fee applied for electricity invoice. Invoice ID: {}, Amount: {}",
                     invoice.getId(), invoice.getTotalAmount());
         }
-        // Update account balances
         updateAccountBalances(card, invoiceAmount);
-        // Save the updated invoice
         Invoice updatedInvoice = invoiceRepository.save(invoice);
-        // Perform transaction for the payment
         performPaymentTransaction(card, invoiceAmount, paymentDate, TransactionType.ELECTRIC);
-        // Map and return response DTO
         return CreditCardMapper.mapToPayingBillsDto(updatedInvoice);
     }
 
