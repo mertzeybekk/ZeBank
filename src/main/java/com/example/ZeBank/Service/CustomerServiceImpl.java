@@ -37,7 +37,7 @@ public class CustomerServiceImpl extends GenericServiceImpl<Customer, CustomerRe
     @Override
     public String add(Customer userInfo) {
         log.info("Adding new customer: {}", userInfo);
-        Customer customer = CustomerMapper.mapToSavedCustomer(userInfo,passwordEncoder);
+        Customer customer = CustomerMapper.mapToSavedCustomer(userInfo, passwordEncoder);
         customerRepository.save(customer);
         log.info("Customer successfully created: {}", customer);
         return "User successfully created";
@@ -63,11 +63,11 @@ public class CustomerServiceImpl extends GenericServiceImpl<Customer, CustomerRe
     @Override
     public CustomerResponseDto save(CustomerRequestDto entity) {
         log.info("Creating new customer: {}", entity);
-        Customer customer = CustomerMapper.dtoToEntity(entity);
+        Customer customer = CustomerMapper.mapToCustomer(entity);
         customer.setPassword(passwordEncoder.encode(entity.getPassword()));
         Customer savedCustomer = customerRepository.save(customer);
         log.info("Customer successfully created: {}", savedCustomer);
-        return CustomerMapper.responseDto(savedCustomer, CustomerType.CREATED);
+        return CustomerMapper.mapToCustomerResponseDto(savedCustomer, CustomerType.CREATED);
     }
 
     @Override
@@ -89,7 +89,6 @@ public class CustomerServiceImpl extends GenericServiceImpl<Customer, CustomerRe
         Customer existingCustomer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
 
-
         existingCustomer.setName(customerDto.getName());
         existingCustomer.setAddress(customerDto.getAddress());
         existingCustomer.setContactInformation(customerDto.getContactInformation());
@@ -99,12 +98,18 @@ public class CustomerServiceImpl extends GenericServiceImpl<Customer, CustomerRe
 
         Customer updatedCustomer = customerRepository.save(existingCustomer);
         log.info("Customer successfully updated: {}", updatedCustomer);
-        return CustomerMapper.responseDto(updatedCustomer, CustomerType.UPDATING);
+        return CustomerMapper.mapToCustomerResponseDto(updatedCustomer, CustomerType.UPDATING);
     }
 
     @Override
     public CustomerResponseDto creditScore(Long id) {
         Optional<Customer> customer = customerRepository.findById(id);
         return CustomerMapper.mapToCustomerResponse(customer.get());
+    }
+
+    @Override
+    public Integer customerUsernameGetId(String username) {
+        Optional<Customer> userInfo = customerRepository.findByName(username);
+        return Math.toIntExact(userInfo.get().getId());
     }
 }

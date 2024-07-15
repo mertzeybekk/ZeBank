@@ -19,7 +19,8 @@ public class CustomerMapper {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public static Customer dtoToEntity(CustomerRequestDto customerRequest) {
+
+    public static Customer mapToCustomer(CustomerRequestDto customerRequest) {
         Customer customer = new Customer();
         customer.setName(customerRequest.getName());
         customer.setPassword(customerRequest.getPassword());
@@ -31,7 +32,7 @@ public class CustomerMapper {
         return customer;
     }
 
-    public static CustomerRequestDto entityToDto(Customer entity) {
+    public static CustomerRequestDto mapToCustomerRequestDto(Customer entity) {
         CustomerRequestDto customerRequestDto = new CustomerRequestDto();
         customerRequestDto.setId(entity.getId());
         customerRequestDto.setName(entity.getName());
@@ -43,7 +44,7 @@ public class CustomerMapper {
         return customerRequestDto;
     }
 
-    public static CustomerResponseDto responseDto(Customer customer, CustomerType customerType) {
+    public static CustomerResponseDto mapToCustomerResponseDto(Customer customer, CustomerType customerType) {
         CustomerResponseDto customerResponseDto = new CustomerResponseDto();
         customerResponseDto.setCreatedDate(new Date());
         customerResponseDto.setCustomerNumber(customer.getCustomerNumber());
@@ -51,7 +52,7 @@ public class CustomerMapper {
         return customerResponseDto;
     }
 
-    public static Customer mapToSavedCustomer(Customer userInfo,PasswordEncoder passwordEncoder) {
+    public static Customer mapToSavedCustomer(Customer userInfo, PasswordEncoder passwordEncoder) {
         Customer customer = new Customer();
         customer.setName(userInfo.getName());
         customer.setAddress(userInfo.getAddress());

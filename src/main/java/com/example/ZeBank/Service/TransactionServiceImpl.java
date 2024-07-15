@@ -39,6 +39,7 @@ public class TransactionServiceImpl extends GenericServiceImpl<Transaction, Tran
         logger.info("Found {} transactions", transactions.size());
         return TransactionMapper.mapToTransactionResponseDtoList(transactions);
     }
+
     @Override
     public Optional<List<TransactionResponseDto>> findById(Long id) {
         logger.info("Finding transaction by id: {}", id);
@@ -86,7 +87,7 @@ public class TransactionServiceImpl extends GenericServiceImpl<Transaction, Tran
         accountRepository.save(toAccount);
 
         // Transaction nesnesini oluştur
-        Transaction transaction = new TransactionMapper(accountRepository).dtoToEntity(entity);
+        Transaction transaction = new TransactionMapper(accountRepository).mapToTransaction(entity);
         transaction.setTransactionDateTime(new Date());
         transaction.setTransactionStatus(TransactionStatus.COMPLETED);
 

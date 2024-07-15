@@ -66,20 +66,15 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
 
     @Override
     public InvoiceResponseDto save(InvoiceRequestDto requestDto) {
-        // Find the customer by ID
         Customer customer = customerRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with ID: " + requestDto.getCustomerId()));
 
-        // Map DTO to entity
         Invoice invoice = InvoiceMapper.mapToInvoice(requestDto, customer);
 
-        // Save the invoice
         Invoice savedInvoice = invoiceRepository.save(invoice);
 
-        // Log the saved invoice
         logger.info("Saved invoice with ID: {}, Invoice Number: {}", savedInvoice.getId(), savedInvoice.getInvoiceNumber());
 
-        // Map and return response DTO
         return InvoiceMapper.mapToInvoiceResponseDto(savedInvoice);
     }
 
@@ -109,47 +104,42 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
 
     @Override
     public String delete(Long id) {
-        // Find the existing invoice by ID
+
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with ID: " + id));
 
-        // Delete the invoice
+
         invoiceRepository.deleteById(id);
 
-        // Log the deleted invoice
+
         logger.info("Deleted invoice with ID: {}, Invoice Number: {}", invoice.getId(), invoice.getInvoiceNumber());
 
-        return "Invoice deleted successfully";
+        return "Invoice deleted successfully" + id;
     }
 
     public InvoiceResponseDto updateInvoice(String invoiceNumber) {
-        // Find the invoice by invoice number
+
         Invoice invoice = invoiceRepository.findByInvoiceNumber(invoiceNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with invoice number: " + invoiceNumber));
         double invoiceAmount = invoice.getTotalAmount();
         invoice.setPaid(Boolean.FALSE);
         List<Account> accounts = invoice.getCustomer().getAccounts();
-        // Update invoice based on its type
+
         switch (invoice.getInvoiceType()) {
             case WATER:
-                // Handle water invoice update logic
-                // Example: updateWaterInvoice(invoice);
+
                 return updateWaterInvoice(invoice, accounts, invoiceAmount);
             case INTERNET:
-                // Handle internet invoice update logic
-                // Example: updateInternetInvoice(invoice, accounts, invoiceAmount);
+
                 return updateInternetInvoice(invoice, accounts, invoiceAmount);
             case TELEPHONE:
-                // Handle telephone invoice update logic
-                // Example: updateTelephoneInvoice(invoice);
+
                 return updateTelephoneInvoice(invoice, accounts, invoiceAmount);
             case ELECTRICITY:
-                // Handle electricity invoice update logic
-                // Example: updateElectricityInvoice(invoice, accounts, invoiceAmount);
+
                 return updateElectricityInvoice(invoice, accounts, invoiceAmount);
             case NATURAL_GAS:
-                // Handle natural gas invoice update logic
-                // Example: updateNaturalGasInvoice(invoice);
+
                 return updateNaturalGasInvoice(invoice, accounts, invoiceAmount);
             default:
                 throw new ResourceNotFoundException("Unknown invoice type found for invoice number: " + invoiceNumber);
@@ -171,20 +161,19 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
             logger.info("No late payment fee applied for internet invoice. Invoice ID: {}, Amount: {}",
                     invoice.getId(), invoice.getTotalAmount());
         }
-        // Update account balances
+
         updateAccountBalances(accounts, invoiceAmount);
-        // Save the updated invoice
+
         Invoice updatedInvoice = invoiceRepository.save(invoice);
-        // Perform transaction for the payment
+
         performPaymentTransaction(accounts, invoiceAmount, paymentDate, TransactionType.INTERNET);
-        // Map and return response DTO
+
         return InvoiceMapper.mapToInvoiceResponseDto(updatedInvoice);
     }
 
     private InvoiceResponseDto updateElectricityInvoice(Invoice invoice, List<Account> accounts, double invoiceAmount) {
         Date paymentDate = invoice.getPaymentDate();
         Date invoiceDate = invoice.getInvoiceDate();
-        TransactionRequestDto transactionRequestDto = new TransactionRequestDto();
 
         if (paymentDate != null && invoiceDate != null && paymentDate.after(invoiceDate)) {
             double originalAmount = invoice.getTotalAmount();
@@ -199,23 +188,22 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
                     invoice.getId(), invoice.getTotalAmount());
         }
 
-        // Update account balances
+
         updateAccountBalances(accounts, invoiceAmount);
 
-        // Save the updated invoice
+
         Invoice updatedInvoice = invoiceRepository.save(invoice);
 
-        // Perform transaction for the payment
+
         performPaymentTransaction(accounts, invoiceAmount, paymentDate, TransactionType.ELECTRIC);
 
-        // Map and return response DTO
+
         return InvoiceMapper.mapToInvoiceResponseDto(updatedInvoice);
     }
 
     private InvoiceResponseDto updateNaturalGasInvoice(Invoice invoice, List<Account> accounts, double invoiceAmount) {
         Date paymentDate = invoice.getPaymentDate();
         Date invoiceDate = invoice.getInvoiceDate();
-        TransactionRequestDto transactionRequestDto = new TransactionRequestDto();
 
         if (paymentDate != null && invoiceDate != null && paymentDate.after(invoiceDate)) {
             double originalAmount = invoice.getTotalAmount();
@@ -230,23 +218,22 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
                     invoice.getId(), invoice.getTotalAmount());
         }
 
-        // Update account balances
+
         updateAccountBalances(accounts, invoiceAmount);
 
-        // Save the updated invoice
+
         Invoice updatedInvoice = invoiceRepository.save(invoice);
 
-        // Perform transaction for the payment
+
         performPaymentTransaction(accounts, invoiceAmount, paymentDate, TransactionType.NATURALGAS);
 
-        // Map and return response DTO
+
         return InvoiceMapper.mapToInvoiceResponseDto(updatedInvoice);
     }
 
     private InvoiceResponseDto updateTelephoneInvoice(Invoice invoice, List<Account> accounts, double invoiceAmount) {
         Date paymentDate = invoice.getPaymentDate();
         Date invoiceDate = invoice.getInvoiceDate();
-        TransactionRequestDto transactionRequestDto = new TransactionRequestDto();
 
         if (paymentDate != null && invoiceDate != null && paymentDate.after(invoiceDate)) {
             double originalAmount = invoice.getTotalAmount();
@@ -261,23 +248,23 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
                     invoice.getId(), invoice.getTotalAmount());
         }
 
-        // Update account balances
+
         updateAccountBalances(accounts, invoiceAmount);
 
-        // Save the updated invoice
+
         Invoice updatedInvoice = invoiceRepository.save(invoice);
 
-        // Perform transaction for the payment
+
         performPaymentTransaction(accounts, invoiceAmount, paymentDate, TransactionType.TELEPHONE);
 
-        // Map and return response DTO
+
         return InvoiceMapper.mapToInvoiceResponseDto(updatedInvoice);
     }
 
     private InvoiceResponseDto updateWaterInvoice(Invoice invoice, List<Account> accounts, double invoiceAmount) {
         Date paymentDate = invoice.getPaymentDate();
         Date invoiceDate = invoice.getInvoiceDate();
-        TransactionRequestDto transactionRequestDto = new TransactionRequestDto();
+
 
         if (paymentDate != null && invoiceDate != null && paymentDate.after(invoiceDate)) {
             double originalAmount = invoice.getTotalAmount();
@@ -292,16 +279,12 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
                     invoice.getId(), invoice.getTotalAmount());
         }
 
-        // Update account balances
         updateAccountBalances(accounts, invoiceAmount);
 
-        // Save the updated invoice
         Invoice updatedInvoice = invoiceRepository.save(invoice);
 
-        // Perform transaction for the payment
         performPaymentTransaction(accounts, invoiceAmount, paymentDate, TransactionType.WATER);
 
-        // Map and return response DTO
         return InvoiceMapper.mapToInvoiceResponseDto(updatedInvoice);
     }
 
@@ -310,10 +293,8 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
             double currentBalance = account.getBalance();
             if (currentBalance >= invoiceAmount) {
                 account.setBalance(currentBalance - invoiceAmount);
-                // Hesabın güncellenmiş bakiyesini kaydetmek gerekirse:
                 accountRepository.save(account);
             } else {
-                // Hesapta yeterli bakiye yoksa burada bir hata işlemi veya loglama yapılabilir
                 throw new IllegalStateException("Account balance is insufficient to pay the invoice.");
             }
         });
@@ -324,14 +305,11 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
         transactionRequestDto.setAmount(invoiceAmount);
         transactionRequestDto.setTransactionStatus(String.valueOf(TransactionStatus.COMPLETED));
         transactionRequestDto.setTransactionType(String.valueOf(transactionType));
-
-        // Log transactionType
         logger.info("Performing transaction with type: {}", transactionType);
 
         accounts.forEach(account -> {
             transactionRequestDto.setAccountId(account.getId());
             Transaction transaction = mapToTransactionDto(transactionRequestDto, paymentDate);
-            // Log transaction before saving
             logger.info("Saving transaction: {}", transaction);
             transactionRepository.save(transaction);
         });

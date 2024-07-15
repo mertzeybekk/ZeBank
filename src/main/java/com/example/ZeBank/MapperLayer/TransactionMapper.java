@@ -30,7 +30,7 @@ public class TransactionMapper {
 
     }
 
-    public Transaction dtoToEntity(TransactionRequestDto transactionRequestDto) {
+    public Transaction mapToTransaction(TransactionRequestDto transactionRequestDto) {
         Optional<Account> accountOptional = accountRepository.findById(transactionRequestDto.getAccountId());
         Account account = accountOptional.orElseThrow(() -> new EntityNotFoundException("Hesap bulunamadı."));
 
@@ -45,7 +45,7 @@ public class TransactionMapper {
         return transaction;
     }
 
-    public Transaction dtoToEntity(TransactionRequestDto transactionRequestDto, List<Account> accountList) {
+    public Transaction mapToTransactionAndAccountList(TransactionRequestDto transactionRequestDto, List<Account> accountList) {
 
         Account selectedAccount = accountList.stream()
                 .filter(account -> account.getId().equals((transactionRequestDto.getAccountId())))

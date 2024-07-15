@@ -1,12 +1,21 @@
 package com.example.ZeBank.Controller;
 
 import com.example.ZeBank.Dto.Request.AuthRequest;
+import com.example.ZeBank.Dto.Request.CodeVerificationRequest;
 import com.example.ZeBank.Dto.Request.CustomerRequestDto;
+import com.example.ZeBank.Dto.Request.SmsTokenRequest;
 import com.example.ZeBank.Dto.Response.CustomerResponseDto;
 import com.example.ZeBank.EntityLayer.Customer;
+import com.example.ZeBank.EntityLayer.SmsToken;
+import com.example.ZeBank.Producer.MessageProducer;
 import com.example.ZeBank.Service.CustomerService;
 import com.example.ZeBank.Service.GenericService;
 import com.example.ZeBank.Service.JwtService;
+import com.example.ZeBank.Service.SmsTokenService;
+import com.twilio.Twilio;
+import com.twilio.rest.api.v2010.account.Message;
+import com.twilio.type.PhoneNumber;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,13 +37,22 @@ public class CustomerController extends GenericControllerImpl<Customer, Customer
     private CustomerService customerService;
     private JwtService jwtService;
     private AuthenticationManager authenticationManager;
+    private MessageProducer messageProducer;
+    private SmsTokenService smsTokenService;
+    public Boolean authenticationStatus = false;
     private static final Logger logger = LoggerFactory.getLogger(CustomerController.class);
 
-    public CustomerController(GenericService<Customer, CustomerRequestDto, CustomerResponseDto> genericService, CustomerService customerService, JwtService jwtService, AuthenticationManager authenticationManager) {
+    public CustomerController(GenericService<Customer, CustomerRequestDto, CustomerResponseDto> genericService,
+                              CustomerService customerService, JwtService jwtService,
+                              AuthenticationManager authenticationManager,
+                              MessageProducer messageProducer,
+                              SmsTokenService smsTokenService) {
         super(genericService);
         this.customerService = customerService;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.messageProducer = messageProducer;
+        this.smsTokenService = smsTokenService;
     }
 
     @Override
@@ -85,20 +104,32 @@ public class CustomerController extends GenericControllerImpl<Customer, Customer
 
     @PostMapping("/authenticate")
     public ResponseEntity<String> authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
-        String token ="";
-        String fullToken="";
+        String token = "";
+        String fullToken = "";
         logger.info("Authenticating user: {}", authRequest.getUsername());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
         );
         if (authentication.isAuthenticated()) {
-            token= jwtService.generateToken(authRequest.getUsername());
-            fullToken = jwtService.extractCustomClaim(token,"username");
-
-            return ResponseEntity.ok(token + "," +fullToken);
+            authenticationStatus = true;
+            token = jwtService.generateToken(authRequest.getUsername());
+            fullToken = jwtService.extractCustomClaim(token, "username");
+            String verificationCode = generateVerificationCode();
+            sendTokenSms(verificationCode);
+            saveVerificationCode(new SmsTokenRequest(authRequest.getUsername(), verificationCode));
+            return ResponseEntity.ok(token + "," + fullToken + "," + verificationCode);
         } else {
             logger.error("Authentication failed for user: {}", authRequest.getUsername());
             throw new UsernameNotFoundException("Invalid user request!");
+        }
+    }
+
+    @PostMapping("/verify-code")
+    public ResponseEntity<String> verifyCode(@RequestBody CodeVerificationRequest request) {
+        if (authenticationStatus && isCodeValid(request.getUsername(), request.getVerificationCode())) {
+            return ResponseEntity.ok("Verification code sent");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid verification code");
         }
     }
 
@@ -106,5 +137,36 @@ public class CustomerController extends GenericControllerImpl<Customer, Customer
     public ResponseEntity<CustomerResponseDto> creditScore(@PathVariable Long id) {
         CustomerResponseDto responseDto = customerService.creditScore(id);
         return ResponseEntity.ok(responseDto);
+    }
+
+    @GetMapping("/findByUsername/{username}")
+    public ResponseEntity<Integer> getByUsername(@PathVariable String username) {
+        Integer customerId = customerService.customerUsernameGetId(username);
+        return ResponseEntity.ok(customerId);
+    }
+
+    private String generateVerificationCode() {
+        return String.valueOf(new Random().nextInt(900000) + 100000);
+    }
+
+    public void sendTokenSms(String generateSmsToken) {
+
+
+        // SMS gönderme işlemi
+       /* Message message = Message.creator(
+             //   new PhoneNumber(toPhoneNumber),
+               // new PhoneNumber(TWILIO_PHONE_NUMBER),
+                //"Giriş Şifreniz" + generateSmsToken
+        ).create();*/
+    }
+
+    private void saveVerificationCode(SmsTokenRequest smsTokenRequest) {
+        smsTokenService.save(smsTokenRequest);
+        // Implement the logic to save the verification code temporarily (e.g., in memory or a cache)
+    }
+
+    private boolean isCodeValid(String username, String verificationCode) {
+        // Implement the logic to check if the verification code is valid
+        return true;
     }
 }

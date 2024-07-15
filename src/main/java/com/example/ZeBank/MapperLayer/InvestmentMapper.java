@@ -23,7 +23,7 @@ public class InvestmentMapper {
 
     public Investment dtoToEntity(InvestmentRequestDto investmentRequestDto) {
         Optional<Customer> customerOptional = Optional.ofNullable(customerRepository.findById(Long.valueOf(investmentRequestDto.getCustomerId()))
-                .orElseThrow(() -> new EntityNotFoundException("Müşteri bulunamadı.")));
+                .orElseThrow(() -> new EntityNotFoundException("Customer not found with id: " + investmentRequestDto.getCustomerId())));
         if (Objects.nonNull(investmentRequestDto)) {
             Investment investment = new Investment();
             investment.setCurrentMarketValue(investmentRequestDto.getCurrentMarketValue());
@@ -40,7 +40,7 @@ public class InvestmentMapper {
         if (Objects.nonNull(investment)) {
             InvestmentResponseDto investmentResponseDto = new InvestmentResponseDto();
             investmentResponseDto.setInvestmentDate(investment.getInvestmentDate());
-            investmentResponseDto.setInformationMessage(difference(investment.getCurrentMarketValue(),investment.getPurchasePrice()));
+            investmentResponseDto.setInformationMessage(difference(investment.getCurrentMarketValue(), investment.getPurchasePrice()));
             investmentResponseDto.setPurchasePrice(investment.getPurchasePrice());
             investmentResponseDto.setCurrentMarketValue(investment.getCurrentMarketValue());
             investmentResponseDto.setId(Math.toIntExact(investment.getId()));

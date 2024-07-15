@@ -25,6 +25,7 @@ public class AccountMapper {
             responseDto.setAccountStatus(account.getAccountStatus().name());
             responseDto.setCustomerId(account.getCustomer().getId());
             responseDto.setAccountNumber(account.getAccountNumber());
+            responseDto.setAccountType(String.valueOf(accountType));
             return responseDto;
         }
         return null;

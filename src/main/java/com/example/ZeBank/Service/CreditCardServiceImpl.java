@@ -87,7 +87,7 @@ public class CreditCardServiceImpl extends GenericServiceImpl<CreditCard, Credit
         }, () -> {
             throw new ResourceNotFoundException("CreditCard not found with id: " + id);
         });
-        return "CreditCard Deleted";
+        return "CreditCard Deleted" + id;
     }
 
     @Override
@@ -104,7 +104,6 @@ public class CreditCardServiceImpl extends GenericServiceImpl<CreditCard, Credit
 
     @Override
     public CreditCardResponseDto creditCardTransaction(CreditCardPayingBillsRequest creditCardPayingBillsRequest, String invoiceNumber) {
-        //InvoiceResponseDto invoiceResponseDto = InvoiceServiceImpl.getInstance().updateInvoice(invoiceNumber);
         CreditCard creditCard = creditCardRepository.findByCardNumber(creditCardPayingBillsRequest.getCardNumber())
                 .orElseThrow(() -> new ResourceNotFoundException("Credit card not found with card number: " + creditCardPayingBillsRequest.getCardNumber()));
         Invoice invoice = invoiceRepository.findByInvoiceNumber(invoiceNumber)
@@ -186,13 +185,9 @@ public class CreditCardServiceImpl extends GenericServiceImpl<CreditCard, Credit
             logger.info("No late payment fee applied for natural gas invoice. Invoice ID: {}, Amount: {}",
                     invoice.getId(), invoice.getTotalAmount());
         }
-        // Update account balances
         updateAccountBalances(card, invoiceAmount);
-        // Save the updated invoice
         Invoice updatedInvoice = invoiceRepository.save(invoice);
-        // Perform transaction for the payment
         performPaymentTransaction(card, invoiceAmount, paymentDate, TransactionType.NATURALGAS);
-        // Map and return response DTO
         return CreditCardMapper.mapToPayingBillsDto(updatedInvoice);
     }
 
@@ -211,13 +206,9 @@ public class CreditCardServiceImpl extends GenericServiceImpl<CreditCard, Credit
             logger.info("No late payment fee applied for telephone invoice. Invoice ID: {}, Amount: {}",
                     invoice.getId(), invoice.getTotalAmount());
         }
-        // Update account balances
         updateAccountBalances(card, invoiceAmount);
-        // Save the updated invoice
         Invoice updatedInvoice = invoiceRepository.save(invoice);
-        // Perform transaction for the payment
         performPaymentTransaction(card, invoiceAmount, paymentDate, TransactionType.TELEPHONE);
-        // Map and return response DTO
         return CreditCardMapper.mapToPayingBillsDto(updatedInvoice);
     }
 
@@ -236,13 +227,13 @@ public class CreditCardServiceImpl extends GenericServiceImpl<CreditCard, Credit
             logger.info("No late payment fee applied for water invoice. Invoice ID: {}, Amount: {}",
                     invoice.getId(), invoice.getTotalAmount());
         }
-        // Update account balances
+
         updateAccountBalances(card, invoiceAmount);
-        // Save the updated invoice
+
         Invoice updatedInvoice = invoiceRepository.save(invoice);
-        // Perform transaction for the payment
+
         performPaymentTransaction(card, invoiceAmount, paymentDate, TransactionType.WATER);
-        // Map and return response DTO
+
         return CreditCardMapper.mapToPayingBillsDto(updatedInvoice);
     }
 
@@ -264,12 +255,12 @@ public class CreditCardServiceImpl extends GenericServiceImpl<CreditCard, Credit
         transactionRequestDto.setTransactionStatus(String.valueOf(TransactionStatus.COMPLETED));
         transactionRequestDto.setTransactionType(String.valueOf(transactionType));
 
-        // Log transactionType
+
         logger.info("Performing transaction with type: {}", transactionType);
 
         transactionRequestDto.setAccountId(card.getId());
         Transaction transaction = mapToTransactionDto(transactionRequestDto, paymentDate);
-        // Log transaction before saving
+
         logger.info("Saving transaction: {}", transaction);
         transactionRepository.save(transaction);
     }

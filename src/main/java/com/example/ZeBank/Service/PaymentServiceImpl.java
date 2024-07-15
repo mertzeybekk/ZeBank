@@ -17,10 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -50,18 +46,19 @@ public class PaymentServiceImpl extends GenericServiceImpl<Payment, PaymentReque
         logger.info("Finding all payments");
         List<Payment> payments = paymentRepository.findAll();
         logger.info("Found {} payments", payments.size());
-        return new PaymentMapper(customerRepository).mapToPaymentResponseDtoList(payments);
+        PaymentMapper paymentMapper = PaymentMapper.getInstance(customerRepository);
+        return paymentMapper.mapToPaymentResponseDtoList(payments);
     }
 
     @Override
     public Optional<List<PaymentResponseDto>> findById(Long id) {
         logger.info("Finding payment by id: {}", id);
         Optional<List<Payment>> paymentOptional = paymentRepository.findAllById(id);
-
+        PaymentMapper paymentMapper = PaymentMapper.getInstance(customerRepository);
         if (paymentOptional.isPresent()) {
             List<Payment> payments = paymentOptional.get();
             List<PaymentResponseDto> paymentResponseDtos = payments.stream()
-                    .map(payment -> new PaymentMapper(customerRepository).mapToPaymentResponseDto(payment))
+                    .map(payment -> paymentMapper.mapToPaymentResponseDto(payment))
                     .collect(Collectors.toList());
             return Optional.of(paymentResponseDtos);
         } else {
@@ -75,13 +72,11 @@ public class PaymentServiceImpl extends GenericServiceImpl<Payment, PaymentReque
     public PaymentResponseDto save(PaymentRequestDto entity) {
         logger.info("Saving payment");
 
-        // Müşteriyi bulma
         Optional<Customer> customer = customerRepository.findById(Long.valueOf(entity.getCustomerId()));
         if (!customer.isPresent()) {
             throw new RuntimeException("Customer not found");
         }
 
-        // Hesabı bulma ve bakiye kontrolü
         List<Account> accountList = customer.get().getAccounts();
         Account selectedAccount = accountList.stream()
                 .filter(account -> account.getId().equals(Long.valueOf(entity.getAccountId())))
@@ -92,10 +87,11 @@ public class PaymentServiceImpl extends GenericServiceImpl<Payment, PaymentReque
         transactionRequestDto.setAmount(entity.getAmount());
         transactionRequestDto.setTransactionStatus(TransactionStatus.COMPLETED.getStatus());
         transactionRequestDto.setTransactionType(TransactionType.DEPOSIT.getType());
-        transactionRepository.save(new TransactionMapper(accountRepository).dtoToEntity(transactionRequestDto, accountList));
+        transactionRepository.save(new TransactionMapper(accountRepository).mapToTransactionAndAccountList(transactionRequestDto, accountList));
 
         // Ödeme işlemini kaydetme
-        Payment payment = new PaymentMapper(customerRepository).dtoToEntity(entity);
+        PaymentMapper paymentMapper = PaymentMapper.getInstance(customerRepository);
+        Payment payment = paymentMapper.mapToPayment(entity);
         Payment savedPayment = paymentRepository.save(payment);
         logger.info("Payment saved: {}", savedPayment);
         if(true){
@@ -110,7 +106,7 @@ public class PaymentServiceImpl extends GenericServiceImpl<Payment, PaymentReque
     public String delete(Long id) {
         logger.info("Deleting payment with id: {}", id);
         paymentRepository.deleteById(id);
-        return "Payment deleted successfully";
+        return "Payment deleted successfully" +id;
     }
 
     @Override

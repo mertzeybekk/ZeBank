@@ -82,7 +82,7 @@ public class AccountServiceImpl extends GenericServiceImpl<Account, AccountReque
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + id));
         accountRepository.deleteById(account.getId());
-        return "Deleted Account";
+        return "Deleted Account" + id;
     }
 
     @Override

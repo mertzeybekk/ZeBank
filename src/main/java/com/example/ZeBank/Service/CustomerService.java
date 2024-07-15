@@ -25,4 +25,5 @@ public interface CustomerService extends GenericService<Customer, CustomerReques
     String delete(Long id);
 
     CustomerResponseDto creditScore(Long id);
+    Integer customerUsernameGetId(String username);
 }

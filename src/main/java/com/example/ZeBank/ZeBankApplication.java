@@ -8,7 +8,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication(exclude = {SecurityAutoConfiguration.class})
-@ComponentScan(basePackages = {"com.example.ZeBank.Controller","com.example.ZeBank.Util.PasswordUtil",  "com.example.ZeBank.Service", "com.example.ZeBank.Config","com.example.ZeBank.FilterLayer"})
+@ComponentScan(basePackages = {"com.example.ZeBank.Controller","com.example.ZeBank.Util.PasswordUtil",  "com.example.ZeBank.Service", "com.example.ZeBank.Config","com.example.ZeBank.FilterLayer","com.example.ZeBank.Producer",
+        "com.example.ZeBank.Consumer","com.example.ZeBank.Email","com.example.ZeBank.MailConfig"})
 
 public class ZeBankApplication {
 

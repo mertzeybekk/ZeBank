@@ -18,14 +18,20 @@ import java.util.stream.Collectors;
 
 public class PaymentMapper {
     private final CustomerRepository customerRepository;
+    private static PaymentMapper instance;
 
     public PaymentMapper(CustomerRepository customerRepository) {
         this.customerRepository = customerRepository;
     }
-
-    public Payment dtoToEntity(PaymentRequestDto paymentRequest) {
+    public static synchronized PaymentMapper getInstance(CustomerRepository customerRepository) {
+        if (instance == null) {
+            instance = new PaymentMapper(customerRepository);
+        }
+        return instance;
+    }
+    public Payment mapToPayment(PaymentRequestDto paymentRequest) {
         Optional<Customer> customerOptional = customerRepository.findById(Long.valueOf(paymentRequest.getCustomerId()));
-        Customer customer = customerOptional.orElseThrow(() -> new EntityNotFoundException("Müşteri bulunamadı."));
+        Customer customer = customerOptional.orElseThrow(() -> new EntityNotFoundException("Customer Not Found." + customerOptional.get().getId()));
         Integer creditScore = customer.getCreditScore();
         creditScore = creditScore + ((creditScore * 5) / 100);
         customer.setCreditScore(creditScore);
@@ -48,7 +54,7 @@ public class PaymentMapper {
             paymentResponseDto.setPaymentPrice(entity.getAmount());
             paymentResponseDto.setPaymentStatus(mapToPaymentStatusResponse(entity.getPaymentStatus()));
             paymentResponseDto.setPaymentType(mapToPaymentTypeResponse(entity.getPaymentType()));
-            paymentResponseDto.setInformationMessage("d");
+            paymentResponseDto.setInformationMessage("Kredin Taksidiniz Başarıyla Ödendi");
             return paymentResponseDto;
         }
         return null;

@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -73,5 +74,14 @@ public class LoanController extends GenericControllerImpl<Loan, LoanRequestDto, 
     public ResponseEntity<List<LoanInformationResponseDto>> loanInformation() {
         List<LoanInformationResponseDto> loanResponseDtoList = loanService.getLoanInformation();
         return ResponseEntity.ok(loanResponseDtoList);
+    }
+    @PostMapping("/showPdf")
+    public ResponseEntity<byte[]> save(@RequestBody LoanRequestDto entity) {
+      //  LoanResponseDto responseDto = loanService.save(entity);
+        if (Objects.nonNull(entity)) {
+            return loanService.createApprovalMessagePdf(entity);
+        } else {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 }
