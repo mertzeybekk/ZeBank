@@ -12,6 +12,7 @@ import com.example.ZeBank.EntityLayer.Invoice;
 import com.example.ZeBank.EntityLayer.Transaction;
 import com.example.ZeBank.MapperLayer.InvoiceMapper;
 import com.example.ZeBank.RepositoryLayer.*;
+import com.example.ZeBank.Util.SmsSendUtil;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +75,21 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
         Invoice savedInvoice = invoiceRepository.save(invoice);
 
         logger.info("Saved invoice with ID: {}, Invoice Number: {}", savedInvoice.getId(), savedInvoice.getInvoiceNumber());
+        String message = String.format("""
+                        Fatura Numarası: %s,
+                        Fatura Oluşturulma Tarihi: %s,
+                        Fatura Miktarı: %.2f TL,
+                        Dağıtım Şirketi: %s,
+                        Fatura Tipi:%s,                   
+                        """,
+                invoice.getInvoiceNumber(),
+                invoice.getInvoiceDate(),
+                invoice.getTotalAmount(),
+                invoice.getCompany(),
+                invoice.getInvoiceType()
+        );
+        SmsSendUtil.sendSms(message);
+
 
         return InvoiceMapper.mapToInvoiceResponseDto(savedInvoice);
     }
@@ -147,8 +163,11 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
     }
 
     private InvoiceResponseDto updateInternetInvoice(Invoice invoice, List<Account> accounts, double invoiceAmount) {
+
         Date paymentDate = invoice.getPaymentDate();
+
         Date invoiceDate = invoice.getInvoiceDate();
+
         if (paymentDate != null && invoiceDate != null && paymentDate.after(invoiceDate)) {
             double originalAmount = invoice.getTotalAmount();
             double lateFeePercentage = 0.05; // %5 gecikme ücreti
@@ -168,11 +187,15 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
 
         performPaymentTransaction(accounts, invoiceAmount, paymentDate, TransactionType.INTERNET);
 
+        invoicePaymentSmsSend(invoice);
+
         return InvoiceMapper.mapToInvoiceResponseDto(updatedInvoice);
     }
 
     private InvoiceResponseDto updateElectricityInvoice(Invoice invoice, List<Account> accounts, double invoiceAmount) {
+
         Date paymentDate = invoice.getPaymentDate();
+
         Date invoiceDate = invoice.getInvoiceDate();
 
         if (paymentDate != null && invoiceDate != null && paymentDate.after(invoiceDate)) {
@@ -188,21 +211,21 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
                     invoice.getId(), invoice.getTotalAmount());
         }
 
-
         updateAccountBalances(accounts, invoiceAmount);
-
 
         Invoice updatedInvoice = invoiceRepository.save(invoice);
 
-
         performPaymentTransaction(accounts, invoiceAmount, paymentDate, TransactionType.ELECTRIC);
 
+        invoicePaymentSmsSend(invoice);
 
         return InvoiceMapper.mapToInvoiceResponseDto(updatedInvoice);
     }
 
     private InvoiceResponseDto updateNaturalGasInvoice(Invoice invoice, List<Account> accounts, double invoiceAmount) {
+
         Date paymentDate = invoice.getPaymentDate();
+
         Date invoiceDate = invoice.getInvoiceDate();
 
         if (paymentDate != null && invoiceDate != null && paymentDate.after(invoiceDate)) {
@@ -218,21 +241,21 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
                     invoice.getId(), invoice.getTotalAmount());
         }
 
-
         updateAccountBalances(accounts, invoiceAmount);
-
 
         Invoice updatedInvoice = invoiceRepository.save(invoice);
 
-
         performPaymentTransaction(accounts, invoiceAmount, paymentDate, TransactionType.NATURALGAS);
 
+        invoicePaymentSmsSend(invoice);
 
         return InvoiceMapper.mapToInvoiceResponseDto(updatedInvoice);
     }
 
     private InvoiceResponseDto updateTelephoneInvoice(Invoice invoice, List<Account> accounts, double invoiceAmount) {
+
         Date paymentDate = invoice.getPaymentDate();
+
         Date invoiceDate = invoice.getInvoiceDate();
 
         if (paymentDate != null && invoiceDate != null && paymentDate.after(invoiceDate)) {
@@ -248,23 +271,22 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
                     invoice.getId(), invoice.getTotalAmount());
         }
 
-
         updateAccountBalances(accounts, invoiceAmount);
-
 
         Invoice updatedInvoice = invoiceRepository.save(invoice);
 
-
         performPaymentTransaction(accounts, invoiceAmount, paymentDate, TransactionType.TELEPHONE);
 
+        invoicePaymentSmsSend(invoice);
 
         return InvoiceMapper.mapToInvoiceResponseDto(updatedInvoice);
     }
 
     private InvoiceResponseDto updateWaterInvoice(Invoice invoice, List<Account> accounts, double invoiceAmount) {
-        Date paymentDate = invoice.getPaymentDate();
-        Date invoiceDate = invoice.getInvoiceDate();
 
+        Date paymentDate = invoice.getPaymentDate();
+
+        Date invoiceDate = invoice.getInvoiceDate();
 
         if (paymentDate != null && invoiceDate != null && paymentDate.after(invoiceDate)) {
             double originalAmount = invoice.getTotalAmount();
@@ -284,6 +306,8 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
         Invoice updatedInvoice = invoiceRepository.save(invoice);
 
         performPaymentTransaction(accounts, invoiceAmount, paymentDate, TransactionType.WATER);
+
+        invoicePaymentSmsSend(invoice);
 
         return InvoiceMapper.mapToInvoiceResponseDto(updatedInvoice);
     }
@@ -328,6 +352,23 @@ public class InvoiceServiceImpl extends GenericServiceImpl<Invoice, InvoiceReque
         } else {
             throw new ResourceNotFoundException("Account not found with ID: " + transactionRequestDto.getAccountId());
         }
+    }
+
+    public void invoicePaymentSmsSend(Invoice invoice) {
+        String message = String.format("""
+                        Fatura Numarası: %s,
+                        Fatura Oluşturulma Tarihi: %s,
+                        Fatura Miktarı: %.2f TL,
+                        Dağıtım Şirketi: %s,
+                        Fatura Tipi:%s                   
+                        """,
+                invoice.getInvoiceNumber(),
+                invoice.getInvoiceDate(),
+                invoice.getTotalAmount(),
+                invoice.getCompany(),
+                invoice.getInvoiceType()
+        );
+        SmsSendUtil.sendSms(message);
     }
 
 }
