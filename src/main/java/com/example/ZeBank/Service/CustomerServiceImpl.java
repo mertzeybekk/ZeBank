@@ -8,6 +8,7 @@ import com.example.ZeBank.EntityLayer.Enum.CustomerType;
 import com.example.ZeBank.MapperLayer.CustomerMapper;
 import com.example.ZeBank.RepositoryLayer.CustomerRepository;
 import com.example.ZeBank.Util.PasswordUtil;
+import com.example.ZeBank.Util.SmsSend;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,6 +68,14 @@ public class CustomerServiceImpl extends GenericServiceImpl<Customer, CustomerRe
         Customer customer = CustomerMapper.mapToCustomer(entity);
         customer.setPassword(passwordEncoder.encode(entity.getPassword()));
         Customer savedCustomer = customerRepository.save(customer);
+        String message = String.format("""
+                        Müşteri Numarası: %s 'lı hesabınız oluşturuldu.,
+                        İşlem  Tarihi %s,             
+                        """,
+                customer.getCustomerNumber(),
+                new Date().toString()
+        );
+        SmsSend.sendTokenSms(message);
         log.info("Customer successfully created: {}", savedCustomer);
         return CustomerMapper.mapToCustomerResponseDto(savedCustomer, CustomerType.CREATED);
     }
@@ -80,6 +90,14 @@ public class CustomerServiceImpl extends GenericServiceImpl<Customer, CustomerRe
         }, () -> {
             throw new ResourceNotFoundException("Customer not found with id: " + id);
         });
+        String message = String.format("""
+                        Müşteri Numarası: %s 'lı hesabınız silindi.,
+                        İşlem Tarihi %s,             
+                        """,
+                customerOptional.get().getCustomerNumber(),
+                new Date().toString()
+        );
+        SmsSend.sendTokenSms(message);
         return "Customer Deleted";
     }
 
@@ -104,6 +122,12 @@ public class CustomerServiceImpl extends GenericServiceImpl<Customer, CustomerRe
     @Override
     public CustomerResponseDto creditScore(Long id) {
         Optional<Customer> customer = customerRepository.findById(id);
+        String message = String.format("""
+                        Kredi Skorunuz: %s,           
+                        """,
+                customer.get().getCreditScore()
+                );
+        SmsSend.sendTokenSms(message);
         return CustomerMapper.mapToCustomerResponse(customer.get());
     }
 

@@ -6,7 +6,6 @@ import com.example.ZeBank.Dto.Request.CustomerRequestDto;
 import com.example.ZeBank.Dto.Request.SmsTokenRequest;
 import com.example.ZeBank.Dto.Response.CustomerResponseDto;
 import com.example.ZeBank.EntityLayer.Customer;
-import com.example.ZeBank.EntityLayer.SmsToken;
 import com.example.ZeBank.Producer.MessageProducer;
 import com.example.ZeBank.Service.CustomerService;
 import com.example.ZeBank.Service.GenericService;
@@ -22,8 +21,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -150,23 +147,26 @@ public class CustomerController extends GenericControllerImpl<Customer, Customer
     }
 
     public void sendTokenSms(String generateSmsToken) {
-
+        String ACCOUNT_SID = "";
+        String AUTH_TOKEN = "";
+        String TWILIO_PHONE_NUMBER = "";
+        Twilio.init(ACCOUNT_SID, AUTH_TOKEN);
+        String toPhoneNumber = "";
 
         // SMS gönderme işlemi
-       /* Message message = Message.creator(
-             //   new PhoneNumber(toPhoneNumber),
-               // new PhoneNumber(TWILIO_PHONE_NUMBER),
-                //"Giriş Şifreniz" + generateSmsToken
-        ).create();*/
+        Message message = Message.creator(
+                new PhoneNumber(toPhoneNumber),
+                new PhoneNumber(TWILIO_PHONE_NUMBER),
+                "Giriş Şifreniz" + generateSmsToken
+        ).create();
     }
 
     private void saveVerificationCode(SmsTokenRequest smsTokenRequest) {
         smsTokenService.save(smsTokenRequest);
-        // Implement the logic to save the verification code temporarily (e.g., in memory or a cache)
     }
 
     private boolean isCodeValid(String username, String verificationCode) {
-        // Implement the logic to check if the verification code is valid
+
         return true;
     }
 }
