@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SmsSend {
+public class SmsSendUtil {
     @Value("${twilio.account.sid}")
     private static String ACCOUNT_SID;
 
@@ -17,7 +17,7 @@ public class SmsSend {
     @Value("${twilio.phone.number}")
     private static String TWILIO_PHONE_NUMBER;
 
-    public static void sendTokenSms(String loanStatusMessage) {
+    public static void sendSms(String loanStatusMessage) {
         Twilio.init(ACCOUNT_SID, AUTH_TOKEN);
         String toPhoneNumber = "+905393909280";
         Message message = Message.creator(
