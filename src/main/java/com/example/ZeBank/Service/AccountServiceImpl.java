@@ -102,6 +102,13 @@ public class AccountServiceImpl extends GenericServiceImpl<Account, AccountReque
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + id));
         accountRepository.deleteById(account.getId());
+        String message = String.format("""
+                        Hesap Numarası: %s, bu hesap silindi.
+                        """,
+                account.getAccountNumber()
+        );
+
+        SmsSend.sendTokenSms(message);
         return "Deleted Account" + id;
     }
 
